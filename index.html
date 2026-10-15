@@ -3,45 +3,29 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FinanceAI — Seu dinheiro sob controle</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root {
-  --bg:#090d16;
-  --panel:#111827;
-  --panel2:#182235;
-  --border:#27344a;
-  --text:#f1f5f9;
-  --muted:#94a3b8;
-  --blue:#3b82f6;
-  --green:#22c55e;
-  --red:#f87171;
-  --orange:#fbbf24;
-}
+:root{--bg:#090d16;--panel:#111827;--panel2:#182235;--border:#27344a;--text:#f1f5f9;--muted:#94a3b8;--blue:#3b82f6;--green:#22c55e;--red:#f87171}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
-input,select,textarea{
-  width:100%;padding:12px;border-radius:9px;
-  border:1px solid var(--border);background:#0b1220;
-  color:var(--text);outline:none
-}
-input:focus,select:focus,textarea:focus{border-color:var(--blue)}
-button.primary{background:var(--blue);color:white;border:0;padding:12px 16px;border-radius:9px;font-weight:600}
+input,select,textarea{width:100%;padding:12px;border-radius:9px;border:1px solid var(--border);background:#0b1220;color:var(--text)}
+button.primary{background:var(--blue);color:white;border:0;padding:12px 16px;border-radius:9px}
 button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border);padding:10px 14px;border-radius:9px}
-button.danger{background:#3a1c27;color:#fda4af;border:0;padding:8px 10px;border-radius:7px}
-button:disabled{opacity:.5;cursor:not-allowed}
+button.danger{background:#3a1c27;color:#fda4af;border:0;padding:8px;border-radius:7px}
+button:disabled{opacity:.5}
 .hidden{display:none!important}
 .muted{color:var(--muted)}
 .small{font-size:12px}
+.brand{font-size:25px;font-weight:800}
+.brand span{color:var(--blue)}
 #authScreen{min-height:100vh;display:grid;place-items:center;padding:20px}
 .auth-card{width:min(420px,100%);background:var(--panel);border:1px solid var(--border);padding:30px;border-radius:18px}
-.brand{font-size:25px;font-weight:800;letter-spacing:-1px}
-.brand span{color:var(--blue)}
 .stack{display:grid;gap:13px}
-#app{min-height:100vh}
+.field{display:grid;gap:7px;font-size:13px;color:var(--muted)}
 header{height:68px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:15px}
 .layout{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 68px)}
 aside{border-right:1px solid var(--border);padding:18px 12px}
@@ -51,156 +35,104 @@ main{padding:26px;min-width:0;max-width:1500px;width:100%;margin:auto}
 h1{font-size:26px;margin:0 0 8px}
 h2{font-size:17px;margin:0 0 16px}
 p{line-height:1.6}
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:20px 0}
-.toolbar input,.toolbar select{max-width:220px}
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:22px 0}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:18px;min-width:0}
-.metric{font-size:25px;font-weight:750;margin-top:12px;overflow-wrap:anywhere}
+.metric{font-size:24px;font-weight:bold;margin-top:12px;overflow-wrap:anywhere}
 .metric-label{color:var(--muted);font-size:13px}
 .section{margin-top:22px}
 .table-wrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{text-align:left;padding:13px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
-th{color:var(--muted);font-weight:500}
+th,td{text-align:left;padding:12px 9px;border-bottom:1px solid var(--border);white-space:nowrap}
+th{color:var(--muted)}
 .positive{color:var(--green)}
 .negative{color:var(--red)}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.field{display:grid;gap:7px;font-size:13px;color:var(--muted)}
-.field.full{grid-column:1/-1}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.notice{padding:12px;border-radius:9px;background:#17243a;color:#bfdbfe;margin:12px 0}
-.error{color:#fca5a5}
-.success{color:#86efac}
-.progress{height:7px;border-radius:10px;background:#263247;overflow:hidden;margin:12px 0}
-.progress div{height:100%;background:var(--blue)}
 .badge{font-size:11px;border-radius:6px;padding:5px 7px;background:#1e3150}
+.notice{padding:12px;border-radius:9px;background:#17243a;color:#bfdbfe;margin:12px 0}
+.error{color:#fca5a5}.success{color:#86efac}
 .chat-log{height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:14px;margin:12px 0}
 .chat-message{padding:10px;margin-bottom:10px;border-radius:9px;background:var(--panel2);white-space:pre-wrap;overflow-wrap:anywhere}
 .chat-message.user{background:#19345b}
 .mobile-nav{display:none}
-@media(max-width:900px){
- .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
- .layout{grid-template-columns:1fr}
- aside{display:none}
- .mobile-nav{display:flex;gap:6px;overflow-x:auto;padding:10px;border-bottom:1px solid var(--border)}
- .mobile-nav .nav-btn{white-space:nowrap;width:auto;flex-shrink:0}
- main{padding:18px}
-}
-@media(max-width:520px){
- header{padding:0 14px}
- .grid{grid-template-columns:1fr 1fr;gap:8px}
- .card{padding:13px}
- .metric{font-size:19px}
- .form-grid{grid-template-columns:1fr}
- .field.full{grid-column:auto}
- main{padding:14px}
- h1{font-size:22px}
- .brand{font-size:21px}
-}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:1fr}aside{display:none}.mobile-nav{display:flex;gap:6px;overflow-x:auto;padding:10px;border-bottom:1px solid var(--border)}.mobile-nav .nav-btn{white-space:nowrap;width:auto;flex-shrink:0}main{padding:18px}}
+@media(max-width:520px){header{padding:0 14px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.card{padding:13px}.metric{font-size:18px}.form-grid{grid-template-columns:1fr}main{padding:14px}h1{font-size:22px}.brand{font-size:21px}}
 </style>
 </head>
 <body>
-
 <section id="authScreen">
   <div class="auth-card">
     <div class="brand">Finance<span>AI</span></div>
     <p class="muted">Seu dinheiro, suas decisões, seu futuro.</p>
-
     <form id="authForm" class="stack">
-      <label class="field">E-mail
-        <input id="authEmail" type="email" required autocomplete="email">
-      </label>
-      <label class="field">Senha
-        <input id="authPassword" type="password" required minlength="6" autocomplete="current-password">
-      </label>
+      <label class="field">E-mail<input id="authEmail" type="email" required autocomplete="email"></label>
+      <label class="field">Senha<input id="authPassword" type="password" required minlength="6" autocomplete="current-password"></label>
       <button class="primary" id="loginBtn" type="submit">Entrar</button>
       <button class="secondary" id="registerBtn" type="button">Criar conta</button>
       <div id="authMessage" class="small" role="status"></div>
     </form>
-    <p class="small muted">Se o cadastro exigir confirmação por e-mail, confirme sua conta antes de entrar.</p>
+    <p class="small muted">Se necessário, confirme seu cadastro pelo e-mail.</p>
   </div>
 </section>
 
 <div id="app" class="hidden">
-<header>
-  <div class="brand">Finance<span>AI</span></div>
-  <div style="display:flex;align-items:center;gap:12px">
-    <span id="userLabel" class="muted small"></span>
-    <button class="secondary" id="logoutBtn">Sair</button>
+  <header>
+    <div class="brand">Finance<span>AI</span></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span id="userLabel" class="muted small"></span>
+      <button class="secondary" id="logoutBtn">Sair</button>
+    </div>
+  </header>
+  <div class="mobile-nav" id="mobileNav"></div>
+  <div class="layout">
+    <aside id="sidebar"></aside>
+    <main>
+      <div id="pageTitle"></div>
+      <div id="pageContent"></div>
+      <div id="appMessage" class="small" role="status"></div>
+    </main>
   </div>
-</header>
-
-<div class="mobile-nav" id="mobileNav"></div>
-<div class="layout">
-<aside id="sidebar"></aside>
-<main>
-  <div id="pageTitle">
-    <h1>Visão geral</h1>
-    <p class="muted">Acompanhe sua vida financeira.</p>
-  </div>
-  <div id="pageContent"></div>
-  <div id="appMessage" class="small" role="status"></div>
-</main>
-</div>
 </div>
 
 <script>
 "use strict";
 
-/* ======================================================
-   CONFIGURAÇÃO
-   Use a URL do projeto e a chave pública/anon do Supabase.
-   Nunca coloque uma service_role key no frontend.
-====================================================== */
+/* Preencha com a URL e a chave pública do seu projeto Supabase. */
 const SUPABASE_URL = "https://xvqepcvyzmdncicnskgs.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_yJhuFj3LDAUs8xvDdvmVwQ_h7op7orb";
-
-/* Nome da Edge Function que atende a API. */
 const API_FUNCTION = "financeai-api";
 
-/* Tabelas esperadas no banco.
-   Confira os nomes e as colunas no seu projeto Supabase. */
 const TABLES = {
-  lancamentos: "lancamentos",
-  recebimentos: "recebimentos",
-  despesas: "despesas",
-  dividas: "dividas",
-  cartoes: "cartoes_credito",
-  metas: "metas_financeiras"
+  lancamentos:"lancamentos",
+  recebimentos:"recebimentos",
+  despesas:"despesas",
+  dividas:"dividas",
+  cartoes:"cartoes_credito",
+  metas:"metas_financeiras"
 };
 
 const $ = id => document.getElementById(id);
-const money = value => Number(value || 0).toLocaleString("pt-BR", {
-  style:"currency", currency:"BRL"
-});
+const money = v => Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const num = v => Number(v)||0;
 const today = () => {
-  const d = new Date();
+  const d=new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 };
-const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
+const esc = v => String(v??"").replace(/[&<>"']/g,c=>({
   "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-}[char]));
-const dateBR = value => {
-  if (!value) return "—";
-  const [y,m,d] = String(value).slice(0,10).split("-");
+}[c]));
+const dateBR = v => {
+  if(!v)return "—";
+  const [y,m,d]=String(v).slice(0,10).split("-");
   return `${d}/${m}/${y}`;
 };
-const num = value => Number(value) || 0;
-const isConfigured = () =>
-  SUPABASE_URL.startsWith("https://") &&
-  !SUPABASE_URL.includes("SUA_URL") &&
-  SUPABASE_ANON_KEY.length > 20 &&
-  !SUPABASE_ANON_KEY.includes("SUA_CHAVE");
 
-let sb = null;
-let currentUser = null;
-let activePage = "dashboard";
-let cache = {
-  lancamentos:[],recebimentos:[],despesas:[],
-  dividas:[],cartoes:[],metas:[]
-};
+let sb=null;
+let currentUser=null;
+let activePage="dashboard";
+let cache={lancamentos:[],recebimentos:[],despesas:[],dividas:[],cartoes:[],metas:[]};
 
-const navItems = [
+const navItems=[
   ["dashboard","Visão geral"],
   ["lancamentos","Lançamentos"],
   ["recebimentos","Recebimentos"],
@@ -212,665 +144,440 @@ const navItems = [
   ["assistente","Assistente IA"]
 ];
 
-function setMessage(message, type="") {
-  const el = $("appMessage");
-  el.className = "small " + type;
-  el.textContent = message || "";
+function setMessage(text,type=""){
+  $("appMessage").className="small "+type;
+  $("appMessage").textContent=text||"";
 }
-function setAuthMessage(message, type="") {
-  const el = $("authMessage");
-  el.className = "small " + type;
-  el.textContent = message || "";
+function setAuthMessage(text,type=""){
+  $("authMessage").className="small "+type;
+  $("authMessage").textContent=text||"";
 }
-function showApp(visible) {
+function showApp(visible){
   $("authScreen").classList.toggle("hidden",visible);
   $("app").classList.toggle("hidden",!visible);
 }
-
-function renderNavigation() {
-  const makeButtons = () => navItems.map(([id,label]) =>
-    `<button class="nav-btn ${activePage===id?"active":""}"
-      data-page="${id}">${label}</button>`
-  ).join("");
-  $("sidebar").innerHTML = makeButtons();
-  $("mobileNav").innerHTML = makeButtons();
-
-  document.querySelectorAll("[data-page]").forEach(button => {
-    button.addEventListener("click",() => go(button.dataset.page));
-  });
+function sum(items,field="valor"){
+  return items.reduce((s,x)=>s+num(x[field]),0);
 }
-
-function go(page) {
-  activePage = page;
+function currentMonth(){return today().slice(0,7);}
+function monthlyItems(items){
+  return items.filter(x=>String(x.data||x.data_recebimento||x.data_vencimento||"").startsWith(currentMonth()));
+}
+function statusBadge(status){
+  return '<span class="badge">'+esc(status||"registrado")+'</span>';
+}
+function emptyMessage(text){
+  return `<div class="card muted">${esc(text)}</div>`;
+}
+function metricCard(label,value,description=""){
+  return `<div class="card"><div class="metric-label">${esc(label)}</div>
+    <div class="metric">${esc(value)}</div><div class="small muted">${esc(description)}</div></div>`;
+}
+function pageHeader(title,subtitle){
+  $("pageTitle").innerHTML=`<h1>${esc(title)}</h1><p class="muted">${esc(subtitle)}</p>`;
+}
+function go(page){
+  activePage=page;
   renderNavigation();
   renderPage();
 }
-
-function pageHeader(title,subtitle) {
-  $("pageTitle").innerHTML =
-    `<h1>${esc(title)}</h1><p class="muted">${esc(subtitle)}</p>`;
+function renderNavigation(){
+  const html=navItems.map(([id,label])=>
+    `<button class="nav-btn ${activePage===id?"active":""}" data-page="${id}">${label}</button>`
+  ).join("");
+  $("sidebar").innerHTML=html;
+  $("mobileNav").innerHTML=html;
+  document.querySelectorAll("[data-page]").forEach(b=>{
+    b.addEventListener("click",()=>go(b.dataset.page));
+  });
 }
 
-function sum(items,field="valor") {
-  return items.reduce((total,item)=>total+num(item[field]),0);
+/* Banco de dados */
+async function dbList(table){
+  const result=await sb.from(table).select("*");
+  if(result.error)throw result.error;
+  return result.data||[];
 }
-
-function currentMonth(date=today()) {
-  return String(date).slice(0,7);
-}
-
-function monthlyItems(items) {
-  const month = currentMonth();
-  return items.filter(item => String(item.data || item.data_vencimento || "").startsWith(month));
-}
-
-
-function statusBadge(status) {
-  const value = String(status || "registrado");
-  return '<span class="badge">' + esc(value) + '</span>';
-}
-
-
-function emptyMessage(message) {
-  return `<div class="card muted">${esc(message)}</div>`;
-}
-
-function metricCard(label,value,description="") {
-  return `<div class="card">
-    <div class="metric-label">${esc(label)}</div>
-    <div class="metric">${esc(value)}</div>
-    <div class="small muted">${esc(description)}</div>
-  </div>`;
-}
-
-/* ======================================================
-   SUPABASE: acesso aos dados
-====================================================== */
-async function dbList(table) {
-  const {data,error} = await sb.from(table)
-    .select("*").order("created_at",{ascending:false});
-  if (error) {
-    /* Algumas tabelas podem usar criado_em em vez de created_at. */
-    const retry = await sb.from(table).select("*");
-    if (retry.error) throw retry.error;
-    return retry.data || [];
-  }
-  return data || [];
-}
-
-async function dbInsert(table,payload) {
-  const {data,error} = await sb.from(table)
-    .insert(payload).select();
-  if (error) throw error;
+async function dbInsert(table,payload){
+  const {data,error}=await sb.from(table).insert(payload).select();
+  if(error)throw error;
   return data;
 }
-
-async function dbDelete(table,id) {
-  const {error} = await sb.from(table).delete().eq("id",id);
-  if (error) throw error;
+async function dbDelete(table,id){
+  const {error}=await sb.from(table).delete().eq("id",id);
+  if(error)throw error;
 }
-
-async function refreshAll() {
+async function refreshAll(){
   setMessage("Atualizando dados...");
-  const results = await Promise.allSettled(
-    Object.entries(TABLES).map(async ([key,table]) => {
-      cache[key] = await dbList(table);
+  const results=await Promise.allSettled(
+    Object.entries(TABLES).map(async([key,table])=>{
+      cache[key]=await dbList(table);
     })
   );
-  const failed = results.filter(result => result.status==="rejected");
   renderPage();
-  if (failed.length) {
-    setMessage(
-      "Algumas tabelas não puderam ser carregadas. Confira nomes, colunas e políticas RLS no Supabase.",
-      "error"
-    );
-  } else {
-    setMessage("Dados atualizados.", "success");
+  if(results.some(x=>x.status==="rejected")){
+    setMessage("Uma ou mais tabelas falharam. Confira nomes, colunas e políticas RLS do Supabase.","error");
+  }else{
+    setMessage("Dados atualizados.","success");
   }
 }
-
-async function deleteItem(table,id) {
-  if (!confirm("Deseja realmente excluir este registro?")) return;
-  try {
-    await dbDelete(TABLES[table],id);
+async function deleteItem(key,id){
+  if(!confirm("Deseja excluir este registro?"))return;
+  try{
+    await dbDelete(TABLES[key],id);
     await refreshAll();
-    setMessage("Registro excluído.", "success");
-  } catch(error) {
-    setMessage("Não foi possível excluir: " + error.message,"error");
+    setMessage("Registro excluído.","success");
+  }catch(error){
+    setMessage("Erro ao excluir: "+error.message,"error");
   }
 }
 
-/* ======================================================
-   DASHBOARD
-====================================================== */
-function renderDashboard() {
-  const entries = cache.lancamentos;
-  const monthEntries = monthlyItems(entries);
-  const incomes = monthEntries
-    .filter(item => item.tipo==="receita")
-    .reduce((s,item)=>s+num(item.valor),0);
-  const expenses = monthEntries
-    .filter(item => item.tipo==="despesa")
-    .reduce((s,item)=>s+num(item.valor),0);
-  const balance = incomes-expenses;
-  const debts = sum(cache.dividas);
-
-  const recent = [...entries]
-    .sort((a,b)=>String(b.data||"").localeCompare(String(a.data||"")))
-    .slice(0,8);
-
-  $("pageContent").innerHTML = `
+/* Dashboard */
+function renderDashboard(){
+  const items=monthlyItems(cache.lancamentos);
+  const income=items.filter(x=>x.tipo==="receita").reduce((s,x)=>s+num(x.valor),0);
+  const expense=items.filter(x=>x.tipo==="despesa").reduce((s,x)=>s+num(x.valor),0);
+  const recent=[...cache.lancamentos].sort((a,b)=>String(b.data||"").localeCompare(String(a.data||""))).slice(0,8);
+  $("pageContent").innerHTML=`
     <div class="grid">
-      ${metricCard("Receitas do mês",money(incomes),"Lançamentos registrados")}
-      ${metricCard("Despesas do mês",money(expenses),"Lançamentos registrados")}
-      ${metricCard("Resultado do mês",money(balance),balance>=0?"Saldo positivo":"Saldo negativo")}
-      ${metricCard("Dívidas cadastradas",money(debts),"Soma dos valores registrados")}
+      ${metricCard("Receitas do mês",money(income))}
+      ${metricCard("Despesas do mês",money(expense))}
+      ${metricCard("Resultado do mês",money(income-expense))}
+      ${metricCard("Dívidas cadastradas",money(sum(cache.dividas)))}
     </div>
-    <div class="card section">
-      <h2>Últimos lançamentos</h2>
-      ${renderTransactionTable(recent)}
-    </div>
-    <div class="card section">
-      <h2>Atalhos</h2>
-      <div class="actions">
-        <button class="primary" data-shortcut="lancamentos">Novo lançamento</button>
-        <button class="secondary" data-shortcut="metas">Ver metas</button>
-        <button class="secondary" data-shortcut="planejamento">Planejamento financeiro</button>
-      </div>
-    </div>
-  `;
-  document.querySelectorAll("[data-shortcut]").forEach(button =>
-    button.addEventListener("click",()=>go(button.dataset.shortcut))
-  );
+    <div class="card section"><h2>Últimos lançamentos</h2>${renderTransactionTable(recent)}</div>
+    <div class="card section"><h2>Atalhos</h2><div class="actions">
+      <button class="primary" data-shortcut="lancamentos">Novo lançamento</button>
+      <button class="secondary" data-shortcut="metas">Metas</button>
+      <button class="secondary" data-shortcut="planejamento">Planejamento</button>
+    </div></div>`;
+  bindShortcuts();
 }
-
-/* ======================================================
-   LANÇAMENTOS
-====================================================== */
-function renderTransactionTable(items) {
-  if (!items.length) return emptyMessage("Nenhum lançamento encontrado.");
-  return `<div class="table-wrap"><table>
-    <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Valor</th><th></th></tr></thead>
-    <tbody>${items.map(item=>`<tr>
-      <td>${dateBR(item.data)}</td>
-      <td>${esc(item.descricao)}</td>
-      <td>${esc(item.tipo)}</td>
-      <td>${esc(item.categoria || "—")}</td>
-      <td class="${item.tipo==="receita"?"positive":"negative"}">${money(item.valor)}</td>
-      <td><button class="danger" data-delete="lancamentos" data-id="${esc(item.id)}">Excluir</button></td>
-    </tr>`).join("")}</tbody>
-  </table></div>`;
+function renderTransactionTable(items){
+  if(!items.length)return emptyMessage("Nenhum lançamento encontrado.");
+  return `<div class="table-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Valor</th><th></th></tr></thead><tbody>
+    ${items.map(x=>`<tr><td>${dateBR(x.data)}</td><td>${esc(x.descricao)}</td><td>${esc(x.tipo)}</td>
+    <td>${esc(x.categoria||"—")}</td><td class="${x.tipo==="receita"?"positive":"negative"}">${money(x.valor)}</td>
+    <td><button class="danger" data-delete="lancamentos" data-id="${esc(x.id)}">Excluir</button></td></tr>`).join("")}
+    </tbody></table></div>`;
 }
-
-function renderLancamentos() {
-  $("pageContent").innerHTML = `
-    <div class="card">
-      <h2>Novo lançamento</h2>
-      <form id="transactionForm">
-        <div class="form-grid">
-          <label class="field">Descrição
-            <input name="descricao" maxlength="120" required>
-          </label>
-          <label class="field">Valor (R$)
-            <input name="valor" type="number" min="0.01" step="0.01" required>
-          </label>
-          <label class="field">Tipo
-            <select name="tipo"><option value="despesa">Despesa</option><option value="receita">Receita</option></select>
-          </label>
-          <label class="field">Categoria
-            <input name="categoria" maxlength="60" placeholder="Ex.: alimentação">
-          </label>
-          <label class="field">Data
-            <input name="data" type="date" value="${today()}" required>
-          </label>
-          <label class="field">Observações
-            <input name="observacoes" maxlength="250">
-          </label>
-        </div>
-        <div class="actions"><button class="primary" type="submit">Salvar lançamento</button></div>
-      </form>
-    </div>
-    <div class="card section"><h2>Histórico</h2>${renderTransactionTable(cache.lancamentos)}</div>
-  `;
-
-  $("transactionForm").addEventListener("submit",async event=>{
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      descricao:String(form.get("descricao")).trim(),
-      valor:num(form.get("valor")),
-      tipo:String(form.get("tipo")),
-      categoria:String(form.get("categoria")||"").trim(),
-      data:String(form.get("data")),
-      observacoes:String(form.get("observacoes")||"").trim()
+function renderLancamentos(){
+  $("pageContent").innerHTML=`
+    <div class="card"><h2>Novo lançamento</h2>
+    <form id="transactionForm"><div class="form-grid">
+      <label class="field">Descrição<input name="descricao" required maxlength="120"></label>
+      <label class="field">Valor (R$)<input name="valor" type="number" min="0.01" step="0.01" required></label>
+      <label class="field">Tipo<select name="tipo"><option value="despesa">Despesa</option><option value="receita">Receita</option></select></label>
+      <label class="field">Categoria<input name="categoria" maxlength="60"></label>
+      <label class="field">Data<input name="data" type="date" value="${today()}" required></label>
+      <label class="field">Observações<input name="observacoes" maxlength="250"></label>
+    </div><div class="actions"><button class="primary">Salvar lançamento</button></div></form></div>
+    <div class="card section"><h2>Histórico</h2>${renderTransactionTable(cache.lancamentos)}</div>`;
+  $("transactionForm").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const f=new FormData(e.currentTarget);
+    const payload={
+      descricao:String(f.get("descricao")).trim(),
+      valor:num(f.get("valor")),
+      tipo:String(f.get("tipo")),
+      categoria:String(f.get("categoria")||"").trim(),
+      data:String(f.get("data")),
+      observacoes:String(f.get("observacoes")||"").trim()
     };
-    if (!payload.descricao || payload.valor<=0) return;
-    try {
+    if(!payload.descricao||payload.valor<=0)return;
+    try{
       await dbInsert(TABLES.lancamentos,payload);
-      event.currentTarget.reset();
+      e.currentTarget.reset();
       await refreshAll();
       setMessage("Lançamento salvo.","success");
-    } catch(error) {
-      setMessage("Erro ao salvar. Confira as colunas da tabela lancamentos: "+error.message,"error");
+    }catch(error){
+      setMessage("Erro ao salvar lançamento: "+error.message,"error");
     }
   });
 }
 
-/* ======================================================
-   MÓDULOS FINANCEIROS
-====================================================== */
-const moduleConfig = {
-  recebimentos:{
-    title:"Recebimentos",subtitle:"Entradas de dinheiro previstas ou realizadas.",
-    table:"recebimentos",name:"Descrição",date:"data_recebimento",
-    fields:[
-      ["descricao","Descrição","text"],
-      ["valor","Valor (R$)","number"],
-      ["data_recebimento","Data prevista","date"],
-      ["status","Status","select:previsto,recebido"]
-    ]
-  },
-  despesas:{
-    title:"Despesas",subtitle:"Contas fixas e gastos previstos.",
-    table:"despesas",name:"Descrição",date:"data_vencimento",
-    fields:[
-      ["descricao","Descrição","text"],
-      ["valor","Valor (R$)","number"],
-      ["data_vencimento","Vencimento","date"],
-      ["categoria","Categoria","text"],
-      ["status","Status","select:pendente,pago"]
-    ]
-  },
-  dividas:{
-    title:"Dívidas",subtitle:"Organize suas obrigações financeiras.",
-    table:"dividas",name:"Credor / descrição",date:"data_vencimento",
-    fields:[
-      ["descricao","Credor / descrição","text"],
-      ["valor","Saldo da dívida (R$)","number"],
-      ["valor_parcela","Valor da parcela (R$)","number"],
-      ["parcelas_restantes","Parcelas restantes","number"],
-      ["data_vencimento","Próximo vencimento","date"],
-      ["status","Status","select:ativa,quitada"]
-    ]
-  },
-  cartoes:{
-    title:"Cartões de crédito",subtitle:"Acompanhe limites e faturas.",
-    table:"cartoes_credito",name:"Nome do cartão",date:"vencimento",
-    fields:[
-      ["nome","Nome do cartão","text"],
-      ["limite","Limite (R$)","number"],
-      ["fatura_atual","Fatura atual (R$)","number"],
-      ["vencimento","Dia ou data de vencimento","text"]
-    ]
-  },
-  metas:{
-    title:"Metas financeiras",subtitle:"Defina objetivos e acompanhe seu progresso.",
-    table:"metas_financeiras",name:"Nome da meta",date:"prazo",
-    fields:[
-      ["nome","Nome da meta","text"],
-      ["valor_objetivo","Valor desejado (R$)","number"],
-      ["valor_atual","Valor já acumulado (R$)","number"],
-      ["prazo","Prazo (opcional)","date"]
-    ]
-  }
+/* Módulos */
+const moduleConfig={
+  recebimentos:{title:"Recebimentos",subtitle:"Entradas previstas ou realizadas.",table:"recebimentos",date:"data_recebimento",fields:[
+    ["descricao","Descrição","text"],["valor","Valor (R$)","number"],["data_recebimento","Data prevista","date"],["status","Status","select:previsto,recebido"]
+  ]},
+  despesas:{title:"Despesas",subtitle:"Contas fixas e gastos previstos.",table:"despesas",date:"data_vencimento",fields:[
+    ["descricao","Descrição","text"],["valor","Valor (R$)","number"],["data_vencimento","Vencimento","date"],["categoria","Categoria","text"],["status","Status","select:pendente,pago"]
+  ]},
+  dividas:{title:"Dívidas",subtitle:"Organize suas obrigações financeiras.",table:"dividas",date:"data_vencimento",fields:[
+    ["descricao","Credor / descrição","text"],["valor","Saldo da dívida (R$)","number"],["valor_parcela","Valor da parcela (R$)","number"],["parcelas_restantes","Parcelas restantes","number"],["data_vencimento","Próximo vencimento","date"],["status","Status","select:ativa,quitada"]
+  ]},
+  cartoes:{title:"Cartões de crédito",subtitle:"Acompanhe limites e faturas.",table:"cartoes_credito",date:"vencimento",fields:[
+    ["nome","Nome do cartão","text"],["limite","Limite (R$)","number"],["fatura_atual","Fatura atual (R$)","number"],["vencimento","Vencimento","text"]
+  ]},
+  metas:{title:"Metas financeiras",subtitle:"Defina e acompanhe objetivos.",table:"metas_financeiras",date:"prazo",fields:[
+    ["nome","Nome da meta","text"],["valor_objetivo","Valor desejado (R$)","number"],["valor_atual","Valor acumulado (R$)","number"],["prazo","Prazo","date"]
+  ]}
 };
-
-function moduleFormField([name,label,type]) {
-  if (type.startsWith("select:")) {
-    const options = type.slice(7).split(",");
-    return `<label class="field">${esc(label)}
-      <select name="${esc(name)}">${options.map(option=>
-        `<option value="${esc(option)}">${esc(option)}</option>`
-      ).join("")}</select>
-    </label>`;
+function moduleFormField([name,label,type]){
+  if(type.startsWith("select:")){
+    const opts=type.slice(7).split(",");
+    return `<label class="field">${esc(label)}<select name="${esc(name)}">${opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("")}</select></label>`;
   }
-  return `<label class="field">${esc(label)}
-    <input name="${esc(name)}" type="${type}" ${type==="number"?'min="0" step="0.01"':""}
-      ${["descricao","nome"].includes(name)?"required":""} ${type==="date"?"":""}>
-  </label>`;
+  return `<label class="field">${esc(label)}<input name="${esc(name)}" type="${type}" ${type==="number"?'min="0" step="0.01"':""} ${["descricao","nome"].includes(name)?"required":""}></label>`;
 }
-
-function renderGenericModule(key) {
-  const config = moduleConfig[key];
-  const items = cache[key] || [];
-  $("pageContent").innerHTML = `
-    <div class="card">
-      <h2>Novo registro</h2>
-      <form id="genericForm">
-        <div class="form-grid">${config.fields.map(moduleFormField).join("")}</div>
-        <div class="actions"><button class="primary" type="submit">Salvar</button></div>
-      </form>
-    </div>
-    <div class="card section">
-      <h2>Registros cadastrados</h2>
-      ${renderGenericTable(key,items)}
-    </div>
-  `;
-  $("genericForm").addEventListener("submit",async event=>{
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const payload = {};
-    for (const [name,,type] of config.fields) {
-      const value = form.get(name);
-      payload[name] = type==="number" ? num(value) : (value || null);
+function renderGenericModule(key){
+  const config=moduleConfig[key],items=cache[key]||[];
+  $("pageContent").innerHTML=`
+    <div class="card"><h2>Novo registro</h2><form id="genericForm">
+    <div class="form-grid">${config.fields.map(moduleFormField).join("")}</div>
+    <div class="actions"><button class="primary">Salvar</button></div></form></div>
+    <div class="card section"><h2>Registros cadastrados</h2>${renderGenericTable(key,items)}</div>`;
+  $("genericForm").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const f=new FormData(e.currentTarget),payload={};
+    for(const [name,,type] of config.fields){
+      const value=f.get(name);
+      payload[name]=type==="number"?num(value):(value||null);
     }
-    try {
+    try{
       await dbInsert(config.table,payload);
-      event.currentTarget.reset();
+      e.currentTarget.reset();
       await refreshAll();
       setMessage("Registro salvo.","success");
-    } catch(error) {
-      setMessage("Erro ao salvar. Confira o schema da tabela "+config.table+": "+error.message,"error");
+    }catch(error){
+      setMessage("Erro ao salvar "+config.table+": "+error.message,"error");
     }
   });
 }
-
-function renderGenericTable(key,items) {
-  if (!items.length) return emptyMessage("Nenhum registro cadastrado.");
-  const config = moduleConfig[key];
-  const nameField = config.fields[0][0];
-  return `<div class="table-wrap"><table>
-    <thead><tr><th>Descrição</th><th>Valor</th><th>Data / prazo</th><th>Status</th><th></th></tr></thead>
-    <tbody>${items.map(item=>{
-      const value = item.valor ?? item.valor_objetivo ?? item.limite ?? item.valor_atual ?? item.fatura_atual ?? item.valor_parcela ?? 0;
-      const date = item[config.date];
-      return `<tr>
-        <td>${esc(item[nameField] || item.descricao || "—")}</td>
-        <td>${money(value)}</td>
-        <td>${dateBR(date)}</td>
-        <td>${statusBadge(item.status || "cadastrado")}</td>
-        <td><button class="danger" data-delete="${key}" data-id="${esc(item.id)}">Excluir</button></td>
-      </tr>`;
-    }).join("")}</tbody>
-  </table></div>`;
+function renderGenericTable(key,items){
+  if(!items.length)return emptyMessage("Nenhum registro cadastrado.");
+  const config=moduleConfig[key],nameField=config.fields[0][0];
+  return `<div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Valor</th><th>Data/prazo</th><th>Status</th><th></th></tr></thead><tbody>
+    ${items.map(x=>{
+      const value=x.valor??x.valor_objetivo??x.limite??x.valor_atual??x.fatura_atual??x.valor_parcela??0;
+      return `<tr><td>${esc(x[nameField]||x.descricao||"—")}</td><td>${money(value)}</td><td>${dateBR(x[config.date])}</td>
+      <td>${statusBadge(x.status||"cadastrado")}</td><td><button class="danger" data-delete="${key}" data-id="${esc(x.id)}">Excluir</button></td></tr>`;
+    }).join("")}</tbody></table></div>`;
 }
 
-/* ======================================================
-   PLANEJAMENTO FINANCEIRO
-====================================================== */
-function renderPlanning() {
-  const month = currentMonth();
-  const tx = cache.lancamentos.filter(item=>String(item.data||"").startsWith(month));
-  const incomes = tx.filter(item=>item.tipo==="receita").reduce((s,item)=>s+num(item.valor),0);
-  const expenses = tx.filter(item=>item.tipo==="despesa").reduce((s,item)=>s+num(item.valor),0);
-  const received = monthlyItems(cache.recebimentos)
-    .filter(item=>item.status!=="recebido").reduce((s,item)=>s+num(item.valor),0);
-  const bills = cache.despesas
-    .filter(item=>item.status!=="pago" && String(item.data_vencimento||"").startsWith(month))
-    .reduce((s,item)=>s+num(item.valor),0);
-  const debtPayments = cache.dividas
-    .filter(item=>item.status!=="quitada")
-    .reduce((s,item)=>s+num(item.valor_parcela),0);
-  const savings = cache.metas.reduce((s,item)=>s+Math.max(0,num(item.valor_objetivo)-num(item.valor_atual)),0);
-  const available = incomes-expenses-bills-debtPayments;
-
-  $("pageContent").innerHTML = `
-    <div class="notice">Estimativa baseada nos registros cadastrados. Valores ausentes ou pagamentos não registrados podem alterar o resultado.</div>
+/* Planejamento */
+function renderPlanning(){
+  const tx=monthlyItems(cache.lancamentos);
+  const income=tx.filter(x=>x.tipo==="receita").reduce((s,x)=>s+num(x.valor),0);
+  const expense=tx.filter(x=>x.tipo==="despesa").reduce((s,x)=>s+num(x.valor),0);
+  const bills=cache.despesas.filter(x=>x.status!=="pago"&&String(x.data_vencimento||"").startsWith(currentMonth())).reduce((s,x)=>s+num(x.valor),0);
+  const debtPayments=cache.dividas.filter(x=>x.status!=="quitada").reduce((s,x)=>s+num(x.valor_parcela),0);
+  const goals=cache.metas.reduce((s,x)=>s+Math.max(0,num(x.valor_objetivo)-num(x.valor_atual)),0);
+  const available=income-expense-bills-debtPayments;
+  $("pageContent").innerHTML=`
+    <div class="notice">Estimativa baseada nos registros cadastrados; dados ausentes podem alterar os resultados.</div>
     <div class="grid">
-      ${metricCard("Receitas registradas",money(incomes),"Mês atual")}
-      ${metricCard("Despesas registradas",money(expenses),"Mês atual")}
-      ${metricCard("Contas pendentes",money(bills),"Vencimentos no mês atual")}
+      ${metricCard("Receitas",money(income),"Mês atual")}
+      ${metricCard("Despesas",money(expense),"Mês atual")}
+      ${metricCard("Contas pendentes",money(bills),"Mês atual")}
       ${metricCard("Saldo estimado",money(available),"Após despesas e parcelas")}
     </div>
-    <div class="card section">
-      <h2>Resumo do planejamento</h2>
-      <p>Receitas registradas: <strong class="positive">${money(incomes)}</strong></p>
-      <p>Despesas registradas: <strong class="negative">${money(expenses)}</strong></p>
+    <div class="card section"><h2>Resumo</h2>
+      <p>Receitas: <strong class="positive">${money(income)}</strong></p>
+      <p>Despesas: <strong class="negative">${money(expense)}</strong></p>
       <p>Contas pendentes: <strong>${money(bills)}</strong></p>
-      <p>Parcelas mensais cadastradas: <strong>${money(debtPayments)}</strong></p>
-      <p>Recebimentos ainda previstos: <strong>${money(received)}</strong></p>
-      <p>Valor que falta para completar as metas atuais: <strong>${money(savings)}</strong></p>
-      <hr style="border-color:var(--border)">
-      <p>Saldo estimado após despesas e parcelas: <strong class="${available>=0?"positive":"negative"}">${money(available)}</strong></p>
-      <div class="actions">
-        <button class="secondary" data-shortcut="lancamentos">Registrar movimentação</button>
-        <button class="secondary" data-shortcut="metas">Revisar metas</button>
-        <button class="secondary" data-shortcut="dividas">Revisar dívidas</button>
-      </div>
+      <p>Parcelas cadastradas: <strong>${money(debtPayments)}</strong></p>
+      <p>Valor que falta para as metas: <strong>${money(goals)}</strong></p>
+      <p>Saldo após despesas e parcelas: <strong class="${available>=0?"positive":"negative"}">${money(available)}</strong></p>
+      <div class="actions"><button class="secondary" data-shortcut="lancamentos">Registrar movimentação</button><button class="secondary" data-shortcut="metas">Revisar metas</button><button class="secondary" data-shortcut="dividas">Revisar dívidas</button></div>
     </div>
-    <div class="card section">
-      <h2>Prioridades sugeridas</h2>
-      <ol>
-        <li>Registre todas as receitas e despesas do mês.</li>
-        <li>Quite ou planeje primeiro as obrigações vencidas e dívidas com juros altos.</li>
-        <li>Reserve dinheiro para as contas essenciais antes de aumentar aportes em metas.</li>
-        <li>Construa uma reserva de emergência de forma compatível com o saldo real.</li>
-      </ol>
-    </div>
-  `;
-  document.querySelectorAll("[data-shortcut]").forEach(button=>
-    button.addEventListener("click",()=>go(button.dataset.shortcut))
-  );
+    <div class="card section"><h2>Prioridades sugeridas</h2><ol>
+      <li>Registre todas as receitas e despesas.</li>
+      <li>Priorize contas essenciais e dívidas com juros altos.</li>
+      <li>Reserve dinheiro para as contas antes de aumentar os aportes.</li>
+      <li>Construa uma reserva de emergência compatível com seu orçamento.</li>
+    </ol></div>`;
+  bindShortcuts();
 }
 
-/* ======================================================
-   ASSISTENTE IA
-====================================================== */
-function renderAssistant() {
-  $("pageContent").innerHTML = `
-    <div class="card">
-      <h2>Assistente financeiro</h2>
-      <p class="muted">Faça perguntas sobre organização financeira. A resposta depende de a API estar configurada e disponível.</p>
-      <div id="chatLog" class="chat-log">
-        <div class="chat-message">Olá! Posso ajudar a interpretar seu orçamento. Evite enviar senhas, dados bancários ou informações pessoais sensíveis.</div>
-      </div>
+/* Assistente IA */
+function renderAssistant(){
+  $("pageContent").innerHTML=`
+    <div class="card"><h2>Assistente financeiro</h2>
+      <p class="muted">A consulta depende da configuração da Edge Function no Supabase.</p>
+      <div id="chatLog" class="chat-log"><div class="chat-message">Olá! Posso ajudar a organizar seu orçamento. Não envie senhas ou dados bancários sensíveis.</div></div>
       <form id="chatForm" class="stack">
-        <label class="field">Sua pergunta
-          <textarea id="chatQuestion" rows="3" maxlength="1500" required placeholder="Ex.: como posso organizar minhas contas este mês?"></textarea>
-        </label>
-        <button class="primary" id="chatSubmit" type="submit">Enviar pergunta</button>
-      </form>
-      <div id="chatStatus" class="small muted"></div>
-    </div>
-  `;
+        <label class="field">Sua pergunta<textarea id="chatQuestion" rows="3" maxlength="1500" required placeholder="Como organizar minhas contas este mês?"></textarea></label>
+        <button class="primary" id="chatSubmit">Enviar pergunta</button>
+      </form><div id="chatStatus" class="small muted"></div>
+    </div>`;
   $("chatForm").addEventListener("submit",sendAssistantMessage);
 }
-
-function addChatMessage(message,who) {
-  const log = $("chatLog");
-  const node = document.createElement("div");
-  node.className = "chat-message " + who;
-  node.textContent = message;
-  log.appendChild(node);
-  log.scrollTop = log.scrollHeight;
+function addChatMessage(text,who){
+  const node=document.createElement("div");
+  node.className="chat-message "+who;
+  node.textContent=text;
+  $("chatLog").appendChild(node);
+  $("chatLog").scrollTop=$("chatLog").scrollHeight;
 }
-
-async function sendAssistantMessage(event) {
-  event.preventDefault();
-  const question = $("chatQuestion").value.trim();
-  if (!question) return;
+async function sendAssistantMessage(e){
+  e.preventDefault();
+  const question=$("chatQuestion").value.trim();
+  if(!question)return;
   addChatMessage(question,"user");
-  $("chatQuestion").value = "";
-  $("chatSubmit").disabled = true;
-  $("chatStatus").textContent = "Consultando a API...";
-
-  try {
-    const {data:sessionData} = await sb.auth.getSession();
-    const token = sessionData.session?.access_token;
-    if (!token) throw new Error("Sua sessão expirou. Entre novamente.");
-
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/${API_FUNCTION}`,
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          "Authorization":`Bearer ${token}`,
-          "apikey":SUPABASE_ANON_KEY
-        },
-        body:JSON.stringify({
-          question,
-          contexto:{
-            receitas:sum(cache.lancamentos.filter(x=>x.tipo==="receita")),
-            despesas:sum(cache.lancamentos.filter(x=>x.tipo==="despesa")),
-            dividas:sum(cache.dividas),
-            metas:cache.metas.map(x=>({
-              nome:x.nome,
-              objetivo:num(x.valor_objetivo),
-              atual:num(x.valor_atual)
-            }))
-          }
-        })
-      }
-    );
-
-    const result = await response.json().catch(()=>({}));
-    if (!response.ok) {
-      throw new Error(result.error || result.message || `A API retornou HTTP ${response.status}`);
-    }
-
-    const answer = result.answer || result.response || result.message || result.output;
-    if (!answer) throw new Error("A API respondeu, mas não retornou um campo de resposta reconhecido.");
+  $("chatQuestion").value="";
+  $("chatSubmit").disabled=true;
+  $("chatStatus").textContent="Consultando a API...";
+  try{
+    const {data}=await sb.auth.getSession();
+    const token=data.session?.access_token;
+    if(!token)throw new Error("Sessão expirada. Entre novamente.");
+    const response=await fetch(`${SUPABASE_URL}/functions/v1/${API_FUNCTION}`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`,"apikey":SUPABASE_ANON_KEY},
+      body:JSON.stringify({
+        question,
+        contexto:{
+          receitas:sum(cache.lancamentos.filter(x=>x.tipo==="receita")),
+          despesas:sum(cache.lancamentos.filter(x=>x.tipo==="despesa")),
+          dividas:sum(cache.dividas),
+          metas:cache.metas.map(x=>({nome:x.nome,objetivo:num(x.valor_objetivo),atual:num(x.valor_atual)}))
+        }
+      })
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(result.error||result.message||`Erro HTTP ${response.status}`);
+    const answer=result.answer||result.response||result.message||result.output;
+    if(!answer)throw new Error("A API não retornou uma resposta reconhecida.");
     addChatMessage(String(answer),"assistant");
-    $("chatStatus").textContent = "";
-  } catch(error) {
+    $("chatStatus").textContent="";
+  }catch(error){
     addChatMessage("Não consegui consultar a IA: "+error.message,"assistant");
-    $("chatStatus").textContent = "Confira a Edge Function e o formato esperado pela API.";
-  } finally {
-    $("chatSubmit").disabled = false;
+    $("chatStatus").textContent="Confira a Edge Function e o formato esperado pela API.";
+  }finally{
+    $("chatSubmit").disabled=false;
   }
 }
 
-/* ======================================================
-   RENDERIZAÇÃO
-====================================================== */
-function renderPage() {
-  const titles = {
+/* Navegação */
+function bindShortcuts(){
+  document.querySelectorAll("[data-shortcut]").forEach(b=>{
+    b.addEventListener("click",()=>go(b.dataset.shortcut));
+  });
+}
+function renderPage(){
+  const titles={
     dashboard:["Visão geral","Resumo das suas finanças."],
-    lancamentos:["Lançamentos","Registre e acompanhe suas movimentações."],
-    recebimentos:["Recebimentos","Organize o dinheiro que deve entrar."],
-    despesas:["Despesas","Controle suas contas e gastos."],
+    lancamentos:["Lançamentos","Registre suas movimentações."],
+    recebimentos:["Recebimentos","Organize as entradas de dinheiro."],
+    despesas:["Despesas","Controle contas e gastos."],
     dividas:["Dívidas","Acompanhe saldos e parcelas."],
     cartoes:["Cartões de crédito","Visualize limites e faturas."],
     metas:["Metas financeiras","Acompanhe seus objetivos."],
-    planejamento:["Planejamento financeiro","Projete seu orçamento com os dados registrados."],
-    assistente:["Assistente IA","Orientação financeira baseada nos dados disponíveis."]
+    planejamento:["Planejamento financeiro","Projete seu orçamento."],
+    assistente:["Assistente IA","Orientação financeira."]
   };
-  const [title,subtitle] = titles[activePage] || titles.dashboard;
+  const [title,subtitle]=titles[activePage]||titles.dashboard;
   pageHeader(title,subtitle);
+  if(activePage==="dashboard")renderDashboard();
+  else if(activePage==="lancamentos")renderLancamentos();
+  else if(moduleConfig[activePage])renderGenericModule(activePage);
+  else if(activePage==="planejamento")renderPlanning();
+  else if(activePage==="assistente")renderAssistant();
 
-  if (activePage==="dashboard") renderDashboard();
-  else if (activePage==="lancamentos") renderLancamentos();
-  else if (moduleConfig[activePage]) renderGenericModule(activePage);
-  else if (activePage==="planejamento") renderPlanning();
-  else if (activePage==="assistente") renderAssistant();
-
-  document.querySelectorAll("[data-delete]").forEach(button=>{
-    button.addEventListener("click",()=>deleteItem(button.dataset.delete,button.dataset.id));
+  document.querySelectorAll("[data-delete]").forEach(b=>{
+    b.addEventListener("click",()=>deleteItem(b.dataset.delete,b.dataset.id));
   });
 }
 
-/* ======================================================
-   LOGIN E CADASTRO
-====================================================== */
-async function login(email,password) {
-  const {data,error} = await sb.auth.signInWithPassword({
-    email,password
-  });
-  if (error) throw error;
-  currentUser = data.user;
+/* Autenticação */
+async function login(email,password){
+  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  if(error)throw error;
+  currentUser=data.user;
   await enterApp();
 }
-
-async function register(email,password) {
-  const {data,error} = await sb.auth.signUp({
-    email,password
-  });
-  if (error) throw error;
-  if (!data.session) {
+async function register(email,password){
+  const {data,error}=await sb.auth.signUp({email,password});
+  if(error)throw error;
+  if(!data.session){
     setAuthMessage("Cadastro enviado. Verifique seu e-mail para confirmar a conta.","success");
     return;
   }
-  currentUser = data.user;
+  currentUser=data.user;
   await enterApp();
 }
-
-async function enterApp() {
-  if (!currentUser) return;
-  $("userLabel").textContent = currentUser.email || "Conta conectada";
+async function enterApp(){
+  if(!currentUser)return;
+  $("userLabel").textContent=currentUser.email||"Conta conectada";
   showApp(true);
   renderNavigation();
   await refreshAll();
   go("dashboard");
 }
 
-$("authForm").addEventListener("submit",async event=>{
-  event.preventDefault();
-  if (!isConfigured()) {
-    setAuthMessage("Configure SUPABASE_URL e SUPABASE_ANON_KEY no código.","error");
+$("authForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!sb){
+    setAuthMessage("Configure a URL e a chave pública do Supabase no início do código.","error");
     return;
   }
-  const button = $("loginBtn");
-  button.disabled = true;
+  $("loginBtn").disabled=true;
   setAuthMessage("Entrando...");
-  try {
+  try{
     await login($("authEmail").value.trim(),$("authPassword").value);
-  } catch(error) {
+  }catch(error){
     setAuthMessage("Não foi possível entrar: "+error.message,"error");
-  } finally {
-    button.disabled = false;
+  }finally{
+    $("loginBtn").disabled=false;
   }
 });
-
 $("registerBtn").addEventListener("click",async()=>{
-  if (!isConfigured()) {
-    setAuthMessage("Configure SUPABASE_URL e SUPABASE_ANON_KEY no código.","error");
+  if(!sb){
+    setAuthMessage("Configure a URL e a chave pública do Supabase.","error");
     return;
   }
-  const email = $("authEmail").value.trim();
-  const password = $("authPassword").value;
-  if (!email || password.length<6) {
+  const email=$("authEmail").value.trim();
+  const password=$("authPassword").value;
+  if(!email||password.length<6){
     setAuthMessage("Informe um e-mail válido e uma senha de pelo menos 6 caracteres.","error");
     return;
   }
-  $("registerBtn").disabled = true;
-  try {
+  $("registerBtn").disabled=true;
+  try{
     await register(email,password);
-  } catch(error) {
+  }catch(error){
     setAuthMessage("Não foi possível criar a conta: "+error.message,"error");
-  } finally {
-    $("registerBtn").disabled = false;
+  }finally{
+    $("registerBtn").disabled=false;
   }
 });
-
 $("logoutBtn").addEventListener("click",async()=>{
-  if (!sb) return;
+  if(!sb)return;
   await sb.auth.signOut();
-  currentUser = null;
-  cache = {
-    lancamentos:[],recebimentos:[],despesas:[],
-    dividas:[],cartoes:[],metas:[]
-  };
+  currentUser=null;
+  cache={lancamentos:[],recebimentos:[],despesas:[],dividas:[],cartoes:[],metas:[]};
   showApp(false);
 });
 
-async function initialize() {
-  if (!isConfigured()) {
-    setAuthMessage("Preencha a URL e a chave pública do Supabase no início do código.");
+async function initialize(){
+  if(!SUPABASE_URL.startsWith("https://")||SUPABASE_URL.includes("COLOQUE_")||SUPABASE_ANON_KEY.includes("COLOQUE_")){
+    setAuthMessage("Preencha SUPABASE_URL e SUPABASE_ANON_KEY no código.");
     return;
   }
-  sb = window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-  const {data,error} = await sb.auth.getSession();
-  if (error) {
-    setAuthMessage("Erro ao verificar a sessão: "+error.message,"error");
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  const {data,error}=await sb.auth.getSession();
+  if(error){
+    setAuthMessage("Erro ao verificar sessão: "+error.message,"error");
     return;
   }
-  if (data.session) {
-    currentUser = data.session.user;
-    try {
+  if(data.session){
+    currentUser=data.session.user;
+    try{
       await enterApp();
-    } catch(error) {
+    }catch(error){
+      showApp(true);
       setMessage("Erro ao carregar o painel: "+error.message,"error");
     }
   }
   sb.auth.onAuthStateChange((_event,session)=>{
-    if (!session) {
-      currentUser = null;
+    if(!session){
+      currentUser=null;
       showApp(false);
     }
   });
 }
-
 initialize();
 </script>
 </body>
