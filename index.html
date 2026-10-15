@@ -1,0 +1,254 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinanceAI</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#090d16;--panel:#111827;--line:#263248;--blue:#3b82f6;--text:#f1f5f9;--muted:#94a3b8;--green:#34d399;--red:#fb7185}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+.brand{font-size:25px;font-weight:800}.brand span{color:var(--blue)}.muted{color:var(--muted)}.auth{min-height:100vh;display:grid;place-items:center;padding:20px}.authbox{width:100%;max-width:420px;padding:28px;background:var(--panel);border:1px solid var(--line);border-radius:18px}.tabs{display:flex;gap:8px;margin:22px 0}.tab,.btn,.navbtn{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:9px;padding:11px}.tab{flex:1}.active,.btn.primary{background:var(--blue)!important;color:white!important;border-color:var(--blue)!important}label{display:block;margin:14px 0 7px;font-size:13px;color:#cbd5e1}input,select,textarea{width:100%;padding:12px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:white}form .primary{margin-top:18px}.message{margin-top:12px;font-size:13px;white-space:pre-wrap;color:var(--red)}header{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--line)}.layout{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 68px)}aside{padding:16px 12px;border-right:1px solid var(--line)}.navbtn{display:block;width:100%;text-align:left;margin-bottom:6px;color:var(--muted)}main{padding:28px;min-width:0}.pagehead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:24px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:19px;margin-bottom:16px;min-width:0}.metric{font-size:25px;font-weight:750;margin-top:10px;overflow-wrap:anywhere}.green{color:var(--green)}.red{color:var(--red)}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}.full{grid-column:1/-1}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:580px}td,th{padding:12px 9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{color:var(--muted)}.actions{display:flex;gap:6px}.small{padding:6px 9px;font-size:12px}.empty{color:var(--muted);padding:18px 0}.note{padding:12px;background:#0b1220;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:13px;line-height:1.5}
+@media(max-width:760px){.layout{grid-template-columns:1fr}aside{display:flex;overflow-x:auto;gap:6px;border-right:0;border-bottom:1px solid var(--line);padding:9px}.navbtn{width:auto;white-space:nowrap;margin:0}main{padding:16px}.grid{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}.full{grid-column:auto}header{padding:0 15px}}
+</style>
+</head>
+<body>
+<section id="auth" class="auth">
+ <div class="authbox">
+  <div class="brand">Finance<span>AI</span></div>
+  <p class="muted">Sua vida financeira, sob controle.</p>
+  <div class="tabs"><button id="tabLogin" class="tab active">Entrar</button><button id="tabRegister" class="tab">Criar conta</button></div>
+  <form id="authForm">
+   <div id="nameWrap" class="hidden"><label>Nome completo</label><input id="name" minlength="2"></div>
+   <label>Nome de usuário</label><input id="username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_]+" autocomplete="username">
+   <label>PIN de 6 dígitos</label><input id="pin" type="password" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="current-password">
+   <button id="authBtn" class="btn primary" style="width:100%">Entrar</button><div id="authMsg" class="message"></div>
+  </form>
+  <p class="muted">Use um PIN exclusivo para este aplicativo.</p>
+ </div>
+</section>
+
+<section id="application" class="hidden">
+<header><div class="brand">Finance<span>AI</span></div><div class="actions"><span id="who" class="muted"></span><button class="btn" id="logout">Sair</button></div></header>
+<div class="layout">
+<aside id="navigation">
+<button class="navbtn active" data-page="dashboard">⌂ Visão geral</button>
+<button class="navbtn" data-page="transactions">⇅ Lançamentos</button>
+<button class="navbtn" data-page="accounts">▤ Contas</button>
+<button class="navbtn" data-page="categories">◉ Categorias</button>
+<button class="navbtn" data-page="bills">◷ Contas a pagar</button>
+<button class="navbtn" data-page="cards">▣ Cartões</button>
+<button class="navbtn" data-page="goals">◎ Metas</button>
+<button class="navbtn" data-page="reports">▥ Relatórios</button>
+<button class="navbtn" data-page="investments">↗ Investimentos</button>
+</aside>
+<main>
+<section id="dashboard" class="page">
+ <div class="pagehead"><div><h1>Visão geral</h1><p class="muted">Resumo financeiro</p></div><button class="btn primary" data-goto="transactions">+ Lançamento</button></div>
+ <div class="grid">
+  <div class="card"><div class="muted">Saldo das contas</div><div class="metric" id="balance">R$ 0,00</div></div>
+  <div class="card"><div class="muted">Receitas do mês</div><div class="metric green" id="income">R$ 0,00</div></div>
+  <div class="card"><div class="muted">Despesas do mês</div><div class="metric red" id="expense">R$ 0,00</div></div>
+ </div>
+ <div class="card"><h3>Últimos lançamentos</h3><div id="recent" class="empty">Carregando...</div></div>
+ <div class="card"><h3>Contas a pagar</h3><div id="billSummary" class="empty">Carregando...</div></div>
+</section>
+
+<section id="transactions" class="page hidden">
+ <h1>Lançamentos</h1><div class="card"><h3 id="txFormTitle">Novo lançamento</h3>
+ <form id="txForm" class="formgrid">
+ <input id="txId" type="hidden">
+ <div><label>Tipo</label><select id="txType"><option value="despesa">Despesa</option><option value="receita">Receita</option></select></div>
+ <div><label>Valor (R$)</label><input id="txValue" type="number" min="0.01" step="0.01" required></div>
+ <div><label>Descrição</label><input id="txDescription" required maxlength="150"></div>
+ <div><label>Data</label><input id="txDate" type="date" required></div>
+ <div><label>Conta</label><select id="txAccount"><option value="">Sem conta</option></select></div>
+ <div><label>Categoria</label><select id="txCategory"><option value="">Sem categoria</option></select></div>
+ <div class="full"><label>Observações</label><textarea id="txNotes" rows="2"></textarea></div>
+ <div class="full actions"><button class="btn primary">Salvar</button><button type="button" class="btn" onclick="resetTx()">Cancelar edição</button></div>
+ <div id="txMsg" class="message full"></div>
+ </form></div>
+ <div class="card"><h3>Histórico</h3><div id="txList" class="empty">Carregando...</div></div>
+</section>
+
+<section id="accounts" class="page hidden">
+ <h1>Contas e carteiras</h1><div class="card"><h3 id="accountTitle">Adicionar conta</h3>
+ <form id="accountForm" class="formgrid"><input id="accountId" type="hidden">
+ <div><label>Nome</label><input id="accountName" required maxlength="100"></div>
+ <div><label>Tipo</label><select id="accountType"><option value="corrente">Conta corrente</option><option value="poupanca">Poupança</option><option value="dinheiro">Dinheiro</option><option value="investimento">Investimento</option><option value="outro">Outro</option></select></div>
+ <div><label>Saldo inicial (R$)</label><input id="accountBalance" type="number" step="0.01" value="0" required></div>
+ <div class="full actions"><button class="btn primary">Salvar conta</button><button type="button" class="btn" onclick="resetAccount()">Cancelar</button></div><div id="accountMsg" class="message full"></div></form></div>
+ <div class="card"><div id="accountList" class="empty">Carregando...</div></div>
+</section>
+
+<section id="categories" class="page hidden">
+ <h1>Categorias</h1><div class="card"><form id="categoryForm" class="formgrid"><input id="categoryId" type="hidden">
+ <div><label>Nome</label><input id="categoryName" required></div><div><label>Tipo</label><select id="categoryType"><option value="despesa">Despesa</option><option value="receita">Receita</option></select></div>
+ <div><label>Cor</label><input id="categoryColor" type="color" value="#2563eb"></div><div class="actions" style="align-items:end"><button class="btn primary">Salvar categoria</button><button type="button" class="btn" onclick="resetCategory()">Cancelar</button></div><div id="categoryMsg" class="message full"></div></form></div>
+ <div class="card"><div id="categoryList" class="empty">Carregando...</div></div>
+</section>
+
+<section id="bills" class="page hidden">
+ <h1>Contas a pagar</h1><div class="card"><h3 id="billTitle">Adicionar conta a pagar</h3><form id="billForm" class="formgrid"><input id="billId" type="hidden">
+ <div><label>Descrição</label><input id="billName" required></div><div><label>Valor (R$)</label><input id="billValue" type="number" min=".01" step=".01" required></div>
+ <div><label>Vencimento</label><input id="billDue" type="date" required></div><div><label>Status</label><select id="billPaid"><option value="false">Pendente</option><option value="true">Pago</option></select></div>
+ <div class="full actions"><button class="btn primary">Salvar</button><button type="button" class="btn" onclick="resetBill()">Cancelar</button></div><div id="billMsg" class="message full"></div></form></div>
+ <div class="card"><div id="billList" class="empty">Carregando...</div></div>
+</section>
+
+<section id="cards" class="page hidden">
+ <h1>Cartões</h1><div class="card"><h3 id="cardTitle">Adicionar cartão</h3><form id="cardForm" class="formgrid"><input id="cardId" type="hidden">
+ <div><label>Nome do cartão</label><input id="cardName" required></div><div><label>Limite (R$)</label><input id="cardLimit" type="number" min="0" step=".01" required></div>
+ <div><label>Dia de fechamento</label><input id="cardClose" type="number" min="1" max="31"></div><div><label>Dia de vencimento</label><input id="cardDue" type="number" min="1" max="31"></div>
+ <div class="full actions"><button class="btn primary">Salvar cartão</button><button type="button" class="btn" onclick="resetCard()">Cancelar</button></div><div id="cardMsg" class="message full"></div></form></div>
+ <div class="card"><div id="cardList" class="empty">Carregando...</div></div>
+ <div class="note">O limite é cadastrado aqui. As compras e faturas de cartão ainda não possuem tabela própria no SQL atual.</div>
+</section>
+
+<section id="goals" class="page hidden">
+ <h1>Metas financeiras</h1><div class="card"><h3 id="goalTitle">Criar meta</h3><form id="goalForm" class="formgrid"><input id="goalId" type="hidden">
+ <div><label>Nome da meta</label><input id="goalName" required></div><div><label>Valor objetivo (R$)</label><input id="goalTarget" type="number" min=".01" step=".01" required></div>
+ <div><label>Valor acumulado (R$)</label><input id="goalCurrent" type="number" min="0" step=".01" value="0" required></div><div><label>Prazo</label><input id="goalDeadline" type="date"></div>
+ <div class="full actions"><button class="btn primary">Salvar meta</button><button type="button" class="btn" onclick="resetGoal()">Cancelar</button></div><div id="goalMsg" class="message full"></div></form></div>
+ <div class="card"><div id="goalList" class="empty">Carregando...</div></div>
+</section>
+
+<section id="reports" class="page hidden"><h1>Relatórios</h1><div class="grid">
+ <div class="card"><div class="muted">Receitas totais registradas</div><div class="metric green" id="reportIncome">R$ 0,00</div></div>
+ <div class="card"><div class="muted">Despesas totais registradas</div><div class="metric red" id="reportExpense">R$ 0,00</div></div>
+ <div class="card"><div class="muted">Resultado acumulado</div><div class="metric" id="reportNet">R$ 0,00</div></div>
+ </div><div class="card"><h3>Por categoria</h3><div id="categoryReport" class="empty"></div></div></section>
+<section id="investments" class="page hidden"><h1>Investimentos</h1><div class="card"><h3>Módulo pendente</h3><p class="muted">O SQL atual não contém uma tabela para investimentos. Para armazenar ativos, aportes, quantidades e rentabilidade corretamente, precisamos criar uma estrutura própria antes de ativar esse módulo.</p></div></section>
+</main></div></section>
+
+<script>
+const SUPABASE_URL="https://xvqepcvyzmdncicnskgs.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_yJhuFj3LDAUs8xvDdvmVwQ_h7op7orb";
+const AUTH_URL=SUPABASE_URL+"/functions/v1/financeai-auth";
+let mode="login",user=null,accessToken=null,refreshToken=null;
+const cache={contas:[],categorias:[],lancamentos:[],contas_a_pagar:[],cartoes:[],metas:[]};
+const $=id=>document.getElementById(id);
+const money=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const today=()=>new Date().toISOString().slice(0,10);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+$("txDate").value=today();$("billDue").value=today();
+
+function authMode(m){mode=m;$("tabLogin").classList.toggle("active",m==="login");$("tabRegister").classList.toggle("active",m==="register");$("nameWrap").classList.toggle("hidden",m!=="register");$("name").required=m==="register";$("authBtn").textContent=m==="register"?"Criar conta":"Entrar";$("authMsg").textContent=""}
+$("tabLogin").onclick=()=>authMode("login");$("tabRegister").onclick=()=>authMode("register");
+
+async function api(table,{method="GET",id=null,body=null,query="",prefer=""}={}){
+ const headers={apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+accessToken};
+ if(body!==null)headers["Content-Type"]="application/json";
+ if(prefer)headers.Prefer=prefer;
+ const url=SUPABASE_URL+"/rest/v1/"+table+(id?"?id=eq."+encodeURIComponent(id):query?query:"?select=*&order=criado_em.desc");
+ const res=await fetch(url,{method,headers,body:body===null?undefined:JSON.stringify(body)});
+ if(!res.ok){const t=await res.text();throw new Error("Supabase "+res.status+": "+t.slice(0,350))}
+ if(res.status===204)return null;
+ const txt=await res.text();return txt?JSON.parse(txt):null;
+}
+async function load(table){cache[table]=await api(table);return cache[table]}
+$("authForm").onsubmit=async e=>{
+ e.preventDefault();
+ if(SUPABASE_ANON_KEY.includes("COLE_SUA")){$("authMsg").textContent="Cole sua chave pública atual no código.";return}
+ $("authBtn").disabled=true;$("authMsg").textContent="Conectando...";
+ try{
+  const res=await fetch(AUTH_URL,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY},body:JSON.stringify({action:mode==="register"?"register":"login",nome:$("name").value.trim(),nome_usuario:$("username").value.trim(),pin:$("pin").value})});
+  const d=await res.json();if(!res.ok)throw Error(d.error||"Falha na autenticação");
+  user=d.user;accessToken=d.session.access_token;refreshToken=d.session.refresh_token;
+  $("auth").classList.add("hidden");$("application").classList.remove("hidden");$("who").textContent=user.nome_usuario;
+  await refreshAll();go("dashboard");
+ }catch(err){$("authMsg").textContent=err.message}
+ finally{$("authBtn").disabled=false;authMode(mode)}
+};
+function go(page){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));$(page).classList.remove("hidden");document.querySelectorAll(".navbtn").forEach(b=>b.classList.toggle("active",b.dataset.page===page))}
+document.querySelectorAll(".navbtn").forEach(b=>b.onclick=()=>go(b.dataset.page));
+document.querySelectorAll("[data-goto]").forEach(b=>b.onclick=()=>go(b.dataset.goto));
+
+async function refreshAll(){
+ const tables=Object.keys(cache);
+ for(const t of tables)await load(t);
+ fillSelectors();renderAll();
+}
+function fillSelectors(){
+ $("txAccount").innerHTML='<option value="">Sem conta</option>'+cache.contas.map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join("");
+ $("txCategory").innerHTML='<option value="">Sem categoria</option>'+cache.categorias.map(x=>`<option value="${x.id}">${esc(x.nome)} (${esc(x.tipo)})</option>`).join("");
+}
+function tableHtml(rows,cols,actions=true){
+ if(!rows.length)return '<div class="empty">Nenhum registro cadastrado.</div>';
+ return '<div class="tablewrap"><table><thead><tr>'+cols.map(c=>`<th>${esc(c.label)}</th>`).join("")+(actions?'<th>Ações</th>':'')+'</tr></thead><tbody>'+
+ rows.map(r=>'<tr>'+cols.map(c=>`<td>${esc(c.render?c.render(r):r[c.key])}</td>`).join("")+(actions?`<td><div class="actions"><button class="btn small" onclick="editRow('${r.id}','${cols[0].table||""}')">Editar</button><button class="btn small" onclick="deleteRow('${r.id}','${cols[0].table||""}')">Excluir</button></div></td>`:'')+'</tr>').join("")+'</tbody></table></div>';
+}
+function renderAll(){renderTx();renderAccounts();renderCategories();renderBills();renderCards();renderGoals();renderDashboard();renderReports()}
+function renderTx(){
+ $("txList").innerHTML=tableHtml(cache.lancamentos,[{label:"Descrição",key:"descricao",table:"lancamentos"},{label:"Tipo",key:"tipo"},{label:"Valor",render:r=>money(r.valor)},{label:"Data",key:"data"},{label:"Conta",render:r=>cache.contas.find(a=>a.id===r.conta_id)?.nome||"—"}]);
+}
+function renderAccounts(){
+ $("accountList").innerHTML=tableHtml(cache.contas,[{label:"Nome",key:"nome",table:"contas"},{label:"Tipo",key:"tipo"},{label:"Saldo inicial",render:r=>money(r.saldo_inicial)}]);
+}
+function renderCategories(){
+ $("categoryList").innerHTML=tableHtml(cache.categorias,[{label:"Nome",key:"nome",table:"categorias"},{label:"Tipo",key:"tipo"},{label:"Cor",render:r=>r.cor||"—"}]);
+}
+function renderBills(){
+ $("billList").innerHTML=tableHtml(cache.contas_a_pagar,[{label:"Descrição",key:"descricao",table:"contas_a_pagar"},{label:"Valor",render:r=>money(r.valor)},{label:"Vencimento",key:"vencimento"},{label:"Status",render:r=>r.pago?"Pago":"Pendente"}]);
+ $("billSummary").textContent=cache.contas_a_pagar.filter(b=>!b.pago).length+" conta(s) pendente(s)";
+}
+function renderCards(){
+ $("cardList").innerHTML=tableHtml(cache.cartoes,[{label:"Nome",key:"nome",table:"cartoes"},{label:"Limite",render:r=>money(r.limite)},{label:"Fechamento",render:r=>r.fechamento_dia||"—"},{label:"Vencimento",render:r=>r.vencimento_dia||"—"}]);
+}
+function renderGoals(){
+ $("goalList").innerHTML=tableHtml(cache.metas,[{label:"Meta",key:"nome",table:"metas"},{label:"Objetivo",render:r=>money(r.valor_objetivo)},{label:"Acumulado",render:r=>money(r.valor_atual)},{label:"Progresso",render:r=>Math.min(100,Math.round(Number(r.valor_atual)/Number(r.valor_objetivo)*100))+"%"}]);
+}
+function renderDashboard(){
+ const month=today().slice(0,7),tx=cache.lancamentos;
+ const inc=tx.filter(t=>t.tipo==="receita"&&String(t.data).startsWith(month)).reduce((s,t)=>s+Number(t.valor),0);
+ const exp=tx.filter(t=>t.tipo==="despesa"&&String(t.data).startsWith(month)).reduce((s,t)=>s+Number(t.valor),0);
+ const balance=cache.contas.reduce((s,a)=>s+Number(a.saldo_inicial),0)+tx.reduce((s,t)=>s+(t.tipo==="receita"?1:-1)*Number(t.valor),0);
+ $("balance").textContent=money(balance);$("income").textContent=money(inc);$("expense").textContent=money(exp);
+ $("recent").innerHTML=tx.length?tx.slice(0,5).map(t=>`<div style="padding:10px 0;border-bottom:1px solid var(--line)">${esc(t.descricao)} <span class="${t.tipo==="receita"?"green":"red"}" style="float:right">${t.tipo==="receita"?"+":"−"} ${money(t.valor)}</span></div>`).join(""):'<div class="empty">Nenhum lançamento registrado.</div>';
+}
+function renderReports(){
+ const tx=cache.lancamentos,inc=tx.filter(t=>t.tipo==="receita").reduce((s,t)=>s+Number(t.valor),0),exp=tx.filter(t=>t.tipo==="despesa").reduce((s,t)=>s+Number(t.valor),0);
+ $("reportIncome").textContent=money(inc);$("reportExpense").textContent=money(exp);$("reportNet").textContent=money(inc-exp);
+ const sums={};tx.filter(t=>t.tipo==="despesa").forEach(t=>{const n=cache.categorias.find(c=>c.id===t.categoria_id)?.nome||"Sem categoria";sums[n]=(sums[n]||0)+Number(t.valor)});
+ $("categoryReport").innerHTML=Object.keys(sums).length?Object.entries(sums).map(([n,v])=>`<p>${esc(n)} <strong style="float:right">${money(v)}</strong></p>`).join(""):'<div class="empty">Registre despesas para ver o relatório por categoria.</div>';
+}
+function msg(id,text){$(id).textContent=text}
+async function save(table,body,id,msgId){
+ try{if(id)await api(table,{method:"PATCH",id,body,prefer:"return=minimal"});else await api(table,{method:"POST",body,prefer:"return=minimal"});
+ msg(msgId,"Salvo com sucesso.");await refreshAll();return true}
+ catch(e){msg(msgId,e.message);return false}
+}
+async function deleteRow(id,table){
+ if(!table||!confirm("Excluir este registro?"))return;
+ try{await api(table,{method:"DELETE",id,prefer:"return=minimal"});await refreshAll()}
+ catch(e){alert("Não foi possível excluir: "+e.message)}
+}
+function editRow(id,table){
+ const r=cache[table]?.find(x=>x.id===id);if(!r)return;
+ go(table==="lancamentos"?"transactions":table==="contas"?"accounts":table==="categorias"?"categories":table==="contas_a_pagar"?"bills":table==="cartoes"?"cards":"goals");
+ if(table==="lancamentos"){ $("txId").value=r.id;$("txType").value=r.tipo;$("txValue").value=r.valor;$("txDescription").value=r.descricao;$("txDate").value=r.data;$("txAccount").value=r.conta_id||"";$("txCategory").value=r.categoria_id||"";$("txNotes").value=r.observacoes||"";$("txFormTitle").textContent="Editar lançamento"; }
+ if(table==="contas"){$("accountId").value=r.id;$("accountName").value=r.nome;$("accountType").value=r.tipo;$("accountBalance").value=r.saldo_inicial;$("accountTitle").textContent="Editar conta"}
+ if(table==="categorias"){$("categoryId").value=r.id;$("categoryName").value=r.nome;$("categoryType").value=r.tipo;$("categoryColor").value=r.cor||"#2563eb"}
+ if(table==="contas_a_pagar"){$("billId").value=r.id;$("billName").value=r.descricao;$("billValue").value=r.valor;$("billDue").value=r.vencimento;$("billPaid").value=String(r.pago);$("billTitle").textContent="Editar conta a pagar"}
+ if(table==="cartoes"){$("cardId").value=r.id;$("cardName").value=r.nome;$("cardLimit").value=r.limite;$("cardClose").value=r.fechamento_dia||"";$("cardDue").value=r.vencimento_dia||"";$("cardTitle").textContent="Editar cartão"}
+ if(table==="metas"){$("goalId").value=r.id;$("goalName").value=r.nome;$("goalTarget").value=r.valor_objetivo;$("goalCurrent").value=r.valor_atual;$("goalDeadline").value=r.prazo||"";$("goalTitle").textContent="Editar meta"}
+}
+function resetTx(){$("txForm").reset();$("txId").value="";$("txDate").value=today();$("txFormTitle").textContent="Novo lançamento"}
+function resetAccount(){$("accountForm").reset();$("accountId").value="";$("accountBalance").value="0";$("accountTitle").textContent="Adicionar conta"}
+function resetCategory(){$("categoryForm").reset();$("categoryId").value="";$("categoryColor").value="#2563eb"}
+function resetBill(){$("billForm").reset();$("billId").value="";$("billDue").value=today();$("billTitle").textContent="Adicionar conta a pagar"}
+function resetCard(){$("cardForm").reset();$("cardId").value="";$("cardTitle").textContent="Adicionar cartão"}
+function resetGoal(){$("goalForm").reset();$("goalId").value="";$("goalCurrent").value="0";$("goalTitle").textContent="Criar meta"}
+
+$("txForm").onsubmit=async e=>{e.preventDefault();const id=$("txId").value;const body={tipo:$("txType").value,valor:Number($("txValue").value),descricao:$("txDescription").value.trim(),data:$("txDate").value,conta_id:$("txAccount").value||null,categoria_id:$("txCategory").value||null,observacoes:$("txNotes").value.trim()||null};if(await save("lancamentos",body,id,"txMsg"))resetTx()};
+$("accountForm").onsubmit=async e=>{e.preventDefault();if(await save("contas",{nome:$("accountName").value.trim(),tipo:$("accountType").value,saldo_inicial:Number($("accountBalance").value)},$("accountId").value,"accountMsg"))resetAccount()};
+$("categoryForm").onsubmit=async e=>{e.preventDefault();if(await save("categorias",{nome:$("categoryName").value.trim(),tipo:$("categoryType").value,cor:$("categoryColor").value},$("categoryId").value,"categoryMsg"))resetCategory()};
+$("billForm").onsubmit=async e=>{e.preventDefault();const paid=$("billPaid").value==="true";if(await save("contas_a_pagar",{descricao:$("billName").value.trim(),valor:Number($("billValue").value),vencimento:$("billDue").value,pago:paid,pago_em:paid?today():null},$("billId").value,"billMsg"))resetBill()};
+$("cardForm").onsubmit=async e=>{e.preventDefault();const close=$("cardClose").value,due=$("cardDue").value;if(await save("cartoes",{nome:$("cardName").value.trim(),limite:Number($("cardLimit").value),fechamento_dia:close?Number(close):null,vencimento_dia:due?Number(due):null},$("cardId").value,"cardMsg"))resetCard()};
+$("goalForm").onsubmit=async e=>{e.preventDefault();const deadline=$("goalDeadline").value;if(await save("metas",{nome:$("goalName").value.trim(),valor_objetivo:Number($("goalTarget").value),valor_atual:Number($("goalCurrent").value),prazo:deadline||null},$("goalId").value,"goalMsg"))resetGoal()};
+
+$("logout").onclick=()=>{user=null;accessToken=null;refreshToken=null;Object.keys(cache).forEach(k=>cache[k]=[]);$("application").classList.add("hidden");$("auth").classList.remove("hidden");$("pin").value="";authMode("login")};
+</script>
+</body>
+</html>
