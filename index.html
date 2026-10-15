@@ -264,10 +264,12 @@ function monthlyItems(items) {
   return items.filter(item => String(item.data || item.data_vencimento || "").startsWith(month));
 }
 
+
 function statusBadge(status) {
   const value = String(status || "registrado");
-  return `<span class="badge">${esc(value)}</span>`;
+  return '<span class="badge">' + esc(value) + '</span>';
 }
+
 
 function emptyMessage(message) {
   return `<div class="card muted">${esc(message)}</div>`;
