@@ -249,6 +249,405 @@ $("cardForm").onsubmit=async e=>{e.preventDefault();const close=$("cardClose").v
 $("goalForm").onsubmit=async e=>{e.preventDefault();const deadline=$("goalDeadline").value;if(await save("metas",{nome:$("goalName").value.trim(),valor_objetivo:Number($("goalTarget").value),valor_atual:Number($("goalCurrent").value),prazo:deadline||null},$("goalId").value,"goalMsg"))resetGoal()};
 
 $("logout").onclick=()=>{user=null;accessToken=null;refreshToken=null;Object.keys(cache).forEach(k=>cache[k]=[]);$("application").classList.add("hidden");$("auth").classList.remove("hidden");$("pin").value="";authMode("login")};
+
+/* ==========================================
+   FINANCEAI — MOTOR DE PLANEJAMENTO
+   Cole antes do </script> final
+========================================== */
+
+Object.assign(cache, {
+  ganhos_fixos: [],
+  despesas_fixas: [],
+  dividas: []
+});
+
+const plannerStyle = document.createElement("style");
+plannerStyle.textContent = `
+.planner-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.planner-kpi{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:15px;min-width:0}
+.planner-kpi strong{display:block;font-size:21px;margin-top:8px;overflow-wrap:anywhere}
+.planner-section{margin-top:20px}
+.progress{height:8px;background:#263248;border-radius:99px;overflow:hidden;margin:12px 0}
+.progress>div{height:100%;background:var(--blue);border-radius:99px}
+.planner-item{padding:14px 0;border-bottom:1px solid var(--line)}
+.planner-item:last-child{border-bottom:0}
+.planner-item-head{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.planner-item small{color:var(--muted);line-height:1.6}
+.planner-alert{padding:13px;border:1px solid var(--line);border-radius:10px;margin:10px 0;line-height:1.5}
+@media(max-width:760px){.planner-kpis{grid-template-columns:1fr}}
+`;
+document.head.appendChild(plannerStyle);
+
+const plannerNav = document.createElement("button");
+plannerNav.className = "navbtn";
+plannerNav.dataset.page = "planner";
+plannerNav.textContent = "✦ Planejamento inteligente";
+$("navigation").appendChild(plannerNav);
+
+const plannerPage = document.createElement("section");
+plannerPage.id = "planner";
+plannerPage.className = "page hidden";
+plannerPage.innerHTML = `
+  <div class="pagehead">
+    <div>
+      <h1>Planejamento inteligente</h1>
+      <p class="muted">Transforme sua renda e seus compromissos em um plano financeiro possível.</p>
+    </div>
+    <button class="btn" id="plannerRefresh">Atualizar análise</button>
+  </div>
+
+  <div id="plannerStatus" class="note">
+    Cadastre seus ganhos, despesas e dívidas para calcular sua capacidade financeira.
+  </div>
+
+  <div class="planner-kpis">
+    <div class="planner-kpi">
+      <span class="muted">Renda mensal prevista</span>
+      <strong class="green" id="plIncome">—</strong>
+    </div>
+    <div class="planner-kpi">
+      <span class="muted">Compromissos mensais</span>
+      <strong class="red" id="plExpenses">—</strong>
+    </div>
+    <div class="planner-kpi">
+      <span class="muted">Disponível estimado</span>
+      <strong id="plSurplus">—</strong>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>1. Ganhos recorrentes</h3>
+    <form id="plIncomeForm" class="formgrid">
+      <div><label>Descrição</label><input id="plIncomeName" required maxlength="120" placeholder="Salário, renda extra..."></div>
+      <div><label>Valor por recebimento (R$)</label><input id="plIncomeValue" type="number" min=".01" step=".01" required></div>
+      <div><label>Frequência</label><select id="plIncomeFreq"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="anual">Anual</option></select></div>
+      <div><label>Dia de recebimento (1–31)</label><input id="plIncomeDay" type="number" min="1" max="31" value="30" required></div>
+      <div><label>Início</label><input id="plIncomeStart" type="date" required></div>
+      <div><label>Fim (opcional)</label><input id="plIncomeEnd" type="date"></div>
+      <div class="full"><button class="btn primary">Adicionar ganho</button></div>
+      <div id="plIncomeMsg" class="message full"></div>
+    </form>
+    <div id="plIncomeList" class="planner-section"></div>
+  </div>
+
+  <div class="card">
+    <h3>2. Despesas fixas</h3>
+    <form id="plExpenseForm" class="formgrid">
+      <div><label>Descrição</label><input id="plExpenseName" required maxlength="120" placeholder="Aluguel, faculdade..."></div>
+      <div><label>Valor por pagamento (R$)</label><input id="plExpenseValue" type="number" min=".01" step=".01" required></div>
+      <div><label>Frequência</label><select id="plExpenseFreq"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="anual">Anual</option></select></div>
+      <div><label>Dia de vencimento (1–31)</label><input id="plExpenseDay" type="number" min="1" max="31" value="10" required></div>
+      <div><label>Início</label><input id="plExpenseStart" type="date" required></div>
+      <div><label>Fim (opcional)</label><input id="plExpenseEnd" type="date"></div>
+      <div class="full"><button class="btn primary">Adicionar despesa</button></div>
+      <div id="plExpenseMsg" class="message full"></div>
+    </form>
+    <div id="plExpenseList" class="planner-section"></div>
+  </div>
+
+  <div class="card">
+    <h3>3. Dívidas parceladas</h3>
+    <form id="plDebtForm" class="formgrid">
+      <div><label>Nome da dívida</label><input id="plDebtName" required maxlength="120" placeholder="Empréstimo, financiamento..."></div>
+      <div><label>Credor (opcional)</label><input id="plDebtCreditor" maxlength="120"></div>
+      <div><label>Valor total da dívida (R$)</label><input id="plDebtTotal" type="number" min=".01" step=".01" required></div>
+      <div><label>Valor da parcela (R$)</label><input id="plDebtInstallment" type="number" min=".01" step=".01" required></div>
+      <div><label>Total de parcelas</label><input id="plDebtCount" type="number" min="1" step="1" required></div>
+      <div><label>Parcelas pagas</label><input id="plDebtPaid" type="number" min="0" step="1" value="0" required></div>
+      <div><label>Dia de vencimento (1–31)</label><input id="plDebtDay" type="number" min="1" max="31" value="10" required></div>
+      <div><label>Próximo vencimento</label><input id="plDebtNext" type="date" required></div>
+      <div><label>Juros mensais (%)</label><input id="plDebtInterest" type="number" min="0" step=".01" value="0"></div>
+      <div class="full"><button class="btn primary">Adicionar dívida</button></div>
+      <div id="plDebtMsg" class="message full"></div>
+    </form>
+    <div id="plDebtList" class="planner-section"></div>
+  </div>
+
+  <div class="card">
+    <h3>4. Plano para seus objetivos</h3>
+    <p class="muted">A análise considera o saldo mensal previsto, uma margem de segurança e o prazo de cada meta.</p>
+    <div class="formgrid">
+      <div><label>Margem de segurança do disponível (%)</label><input id="plSafety" type="number" min="0" max="90" step="5" value="15"></div>
+      <div><label>Reserva de emergência (meses de despesas)</label><select id="plReserveMonths"><option value="3">3 meses</option><option value="6" selected>6 meses</option></select></div>
+    </div>
+    <div id="plAdvice" class="planner-section"></div>
+  </div>
+`;
+
+$("application").querySelector("main").appendChild(plannerPage);
+
+plannerNav.onclick = () => go("planner");
+$("plannerRefresh").onclick = async () => {
+  try {
+    $("plannerRefresh").disabled = true;
+    await refreshAll();
+    msg("plannerStatus", "Dados atualizados.");
+  } catch (e) {
+    msg("plannerStatus", "Não foi possível atualizar: " + e.message);
+  } finally {
+    $("plannerRefresh").disabled = false;
+  }
+};
+
+$("plIncomeStart").value = today();
+$("plExpenseStart").value = today();
+$("plDebtNext").value = today();
+
+/* Corrige o cadastro de tabelas novas e mantém os dados isolados
+   pelo JWT da sessão atual, respeitando as políticas RLS do Supabase. */
+
+function monthlyEquivalent(item) {
+  const amount = Number(item.valor || 0);
+  if (item.frequencia === "semanal") return amount * 52 / 12;
+  if (item.frequencia === "anual") return amount / 12;
+  return amount;
+}
+
+function activeOnDate(item, date) {
+  return item.ativo !== false &&
+    (!item.data_inicio || item.data_inicio <= date) &&
+    (!item.data_fim || item.data_fim >= date);
+}
+
+function monthlyDebtCost(debt) {
+  if (!debt.ativa) return 0;
+  const remaining = Number(debt.parcelas_totais) - Number(debt.parcelas_pagas);
+  return remaining > 0 ? Number(debt.valor_parcela) : 0;
+}
+
+function dateInCurrentMonth(date) {
+  return String(date || "").slice(0, 7) === today().slice(0, 7);
+}
+
+function plannerMetrics() {
+  const date = today();
+  const income = cache.ganhos_fixos
+    .filter(x => activeOnDate(x, date))
+    .reduce((sum, x) => sum + monthlyEquivalent(x), 0);
+
+  const fixedExpenses = cache.despesas_fixas
+    .filter(x => activeOnDate(x, date))
+    .reduce((sum, x) => sum + monthlyEquivalent(x), 0);
+
+  const debts = cache.dividas
+    .filter(x => x.ativa && Number(x.parcelas_pagas) < Number(x.parcelas_totais))
+    .reduce((sum, x) => sum + monthlyDebtCost(x), 0);
+
+  const commitments = fixedExpenses + debts;
+  return { income, fixedExpenses, debts, commitments, surplus: income - commitments };
+}
+
+function plannerItem(title, subtitle, value, id, table) {
+  return `<div class="planner-item">
+    <div class="planner-item-head">
+      <div><strong>${esc(title)}</strong><br><small>${esc(subtitle)}</small></div>
+      <div style="text-align:right"><strong>${money(value)}</strong><br>
+      <button class="btn small" onclick="plannerDelete('${id}','${table}')">Excluir</button></div>
+    </div>
+  </div>`;
+}
+
+window.plannerDelete = async function(id, table) {
+  if (!confirm("Excluir este registro do planejamento?")) return;
+  try {
+    await api(table, {method:"DELETE", id, prefer:"return=minimal"});
+    await refreshAll();
+  } catch (e) {
+    alert("Não foi possível excluir: " + e.message);
+  }
+};
+
+function renderPlanner() {
+  const m = plannerMetrics();
+  $("plIncome").textContent = money(m.income);
+  $("plExpenses").textContent = money(m.commitments);
+  $("plSurplus").textContent = money(m.surplus);
+  $("plSurplus").className = m.surplus >= 0 ? "green" : "red";
+
+  const activeIncome = cache.ganhos_fixos.filter(x => x.ativo !== false);
+  const activeExpenses = cache.despesas_fixas.filter(x => x.ativo !== false);
+  const activeDebts = cache.dividas.filter(x => x.ativa);
+
+  $("plIncomeList").innerHTML = activeIncome.length
+    ? activeIncome.map(x => plannerItem(
+        x.nome,
+        `${x.frequencia} • dia ${x.dia_recebimento} • ${x.data_fim ? "até "+x.data_fim : "sem data final"}`,
+        monthlyEquivalent(x), x.id, "ganhos_fixos"
+      )).join("")
+    : '<div class="empty">Cadastre sua primeira fonte de renda recorrente.</div>';
+
+  $("plExpenseList").innerHTML = activeExpenses.length
+    ? activeExpenses.map(x => plannerItem(
+        x.nome,
+        `${x.frequencia} • vencimento dia ${x.dia_vencimento} • ${x.data_fim ? "até "+x.data_fim : "sem data final"}`,
+        monthlyEquivalent(x), x.id, "despesas_fixas"
+      )).join("")
+    : '<div class="empty">Cadastre suas despesas fixas.</div>';
+
+  $("plDebtList").innerHTML = activeDebts.length
+    ? activeDebts.map(x => plannerItem(
+        x.nome,
+        `${x.credor || "Credor não informado"} • ${x.parcelas_pagas}/${x.parcelas_totais} parcelas pagas • próximo vencimento ${x.proximo_vencimento}`,
+        Number(x.valor_total) - (Number(x.valor_total) / Math.max(1, Number(x.parcelas_totais))) * Number(x.parcelas_pagas),
+        x.id, "dividas"
+      )).join("")
+    : '<div class="empty">Cadastre suas dívidas parceladas.</div>';
+
+  renderPlannerAdvice(m);
+}
+
+function renderPlannerAdvice(m) {
+  const safety = Math.max(0, Math.min(90, Number($("plSafety").value || 15))) / 100;
+  const months = Number($("plReserveMonths").value || 6);
+  const available = Math.max(0, m.surplus) * (1 - safety);
+  const essentialMonthly = m.fixedExpenses;
+  const reserveTarget = essentialMonthly * months;
+  const goals = [...cache.metas].sort((a,b) => {
+    const da = a.prazo || "9999-12-31", db = b.prazo || "9999-12-31";
+    return da.localeCompare(db);
+  });
+
+  let html = `
+    <div class="planner-alert">
+      <strong>Capacidade mensal estimada: ${money(available)}</strong><br>
+      <small>Disponível após compromissos cadastrados e margem de segurança de ${Math.round(safety*100)}%. Isso não inclui despesas variáveis que você ainda não cadastrou.</small>
+    </div>
+    <div class="planner-alert">
+      <strong>Reserva de emergência sugerida: ${money(reserveTarget)}</strong><br>
+      <small>Estimativa baseada em ${months} meses das despesas fixas cadastradas (${money(essentialMonthly)}/mês). Considere incluir alimentação, transporte, saúde e outras despesas essenciais.</small>
+    </div>`;
+
+  if (m.surplus <= 0) {
+    html += `<div class="planner-alert red"><strong>Prioridade: equilibrar o orçamento.</strong><br>
+      Seus compromissos cadastrados consomem toda a renda prevista ou a ultrapassam. Não é seguro recomendar aportes positivos sem revisar despesas, renda ou parcelas.</div>`;
+  } else if (available === 0) {
+    html += `<div class="planner-alert">A margem escolhida deixa zero disponível para metas. Reduza a margem somente se isso refletir sua situação real.</div>`;
+  }
+
+  if (!goals.length) {
+    html += `<div class="empty">Você ainda não cadastrou metas. Crie uma na seção Metas para receber um plano de contribuição e prazo.</div>`;
+  } else {
+    html += `<h3 class="planner-section">Plano para cada meta</h3>`;
+    goals.forEach(g => {
+      const target = Number(g.valor_objetivo);
+      const current = Number(g.valor_atual);
+      const remaining = Math.max(0, target-current);
+      const deadline = g.prazo;
+      const now = new Date(today()+"T12:00:00");
+      const end = deadline ? new Date(deadline+"T12:00:00") : null;
+      let monthsLeft = null;
+      if (end) {
+        monthsLeft = Math.max(0, (end.getFullYear()-now.getFullYear())*12 + end.getMonth()-now.getMonth());
+        if (end.getDate() > now.getDate()) monthsLeft += 1;
+      }
+      const needed = monthsLeft === null ? null : (monthsLeft > 0 ? remaining/monthsLeft : remaining);
+      const affordable = needed === null ? null : needed <= available;
+      const time = available > 0 ? Math.ceil(remaining/available) : null;
+      const pct = target > 0 ? Math.min(100, Math.round(current/target*100)) : 0;
+
+      html += `<div class="planner-item">
+        <div class="planner-item-head">
+          <div><strong>${esc(g.nome)}</strong><br><small>${money(current)} de ${money(target)} • faltam ${money(remaining)}</small></div>
+          <strong>${pct}%</strong>
+        </div>
+        <div class="progress"><div style="width:${pct}%"></div></div>`;
+
+      if (remaining === 0) {
+        html += `<div class="green"><strong>Meta concluída!</strong></div>`;
+      } else if (monthsLeft !== null) {
+        html += `<div>Prazo: <strong>${esc(deadline)}</strong></div>
+          <div>Aporte necessário: <strong>${money(needed)}/mês</strong></div>
+          <div class="${affordable ? "green" : "red"}"><strong>${affordable ? "Cabe no orçamento estimado." : "Não cabe no orçamento estimado."}</strong></div>
+          ${!affordable ? `<small>Para manter a margem atual, considere ampliar o prazo, reduzir o valor-alvo ou aumentar a renda. Não reduza despesas essenciais só para cumprir a meta.</small>` : ""}`;
+      } else {
+        html += `<div>Aporte sugerido: <strong>${money(available)}/mês</strong></div>
+          <div>Prazo estimado: <strong>${time === null ? "indefinido" : time + " mês(es)"}</strong></div>
+          <small>Previsão simplificada, sem rendimentos de investimentos ou imprevistos.</small>`;
+      }
+      html += `</div>`;
+    });
+  }
+  $("plAdvice").innerHTML = html;
+}
+
+$("plSafety").addEventListener("input", () => renderPlannerAdvice(plannerMetrics()));
+$("plReserveMonths").addEventListener("change", () => renderPlannerAdvice(plannerMetrics()));
+
+$("plIncomeForm").onsubmit = async e => {
+  e.preventDefault();
+  const start = $("plIncomeStart").value, end = $("plIncomeEnd").value;
+  if (end && end < start) return msg("plIncomeMsg", "A data final deve ser posterior à data inicial.");
+  const body = {
+    nome: $("plIncomeName").value.trim(),
+    valor: Number($("plIncomeValue").value),
+    frequencia: $("plIncomeFreq").value,
+    dia_recebimento: Number($("plIncomeDay").value),
+    data_inicio: start,
+    data_fim: end || null,
+    ativo: true
+  };
+  try {
+    await api("ganhos_fixos", {method:"POST", body, prefer:"return=minimal"});
+    msg("plIncomeMsg", "Ganho recorrente cadastrado.");
+    $("plIncomeForm").reset(); $("plIncomeStart").value=today(); $("plIncomeDay").value="30";
+    await refreshAll();
+  } catch (err) { msg("plIncomeMsg", err.message); }
+};
+
+$("plExpenseForm").onsubmit = async e => {
+  e.preventDefault();
+  const start = $("plExpenseStart").value, end = $("plExpenseEnd").value;
+  if (end && end < start) return msg("plExpenseMsg", "A data final deve ser posterior à data inicial.");
+  const body = {
+    nome: $("plExpenseName").value.trim(),
+    valor: Number($("plExpenseValue").value),
+    frequencia: $("plExpenseFreq").value,
+    dia_vencimento: Number($("plExpenseDay").value),
+    data_inicio: start,
+    data_fim: end || null,
+    ativo: true
+  };
+  try {
+    await api("despesas_fixas", {method:"POST", body, prefer:"return=minimal"});
+    msg("plExpenseMsg", "Despesa recorrente cadastrada.");
+    $("plExpenseForm").reset(); $("plExpenseStart").value=today(); $("plExpenseDay").value="10";
+    await refreshAll();
+  } catch (err) { msg("plExpenseMsg", err.message); }
+};
+
+$("plDebtForm").onsubmit = async e => {
+  e.preventDefault();
+  const total = Number($("plDebtCount").value);
+  const paid = Number($("plDebtPaid").value);
+  if (paid > total) return msg("plDebtMsg", "Parcelas pagas não podem superar o total.");
+  const body = {
+    nome: $("plDebtName").value.trim(),
+    credor: $("plDebtCreditor").value.trim() || null,
+    valor_total: Number($("plDebtTotal").value),
+    valor_parcela: Number($("plDebtInstallment").value),
+    parcelas_totais: total,
+    parcelas_pagas: paid,
+    dia_vencimento: Number($("plDebtDay").value),
+    proximo_vencimento: $("plDebtNext").value,
+    juros_mensais: Number($("plDebtInterest").value || 0),
+    ativa: paid < total
+  };
+  try {
+    await api("dividas", {method:"POST", body, prefer:"return=minimal"});
+    msg("plDebtMsg", "Dívida cadastrada.");
+    $("plDebtForm").reset(); $("plDebtNext").value=today();
+    $("plDebtPaid").value="0"; $("plDebtDay").value="10"; $("plDebtInterest").value="0";
+    await refreshAll();
+  } catch (err) { msg("plDebtMsg", err.message); }
+};
+
+/* Envolve a atualização existente para renderizar os dados novos. */
+const originalRefreshAll = refreshAll;
+refreshAll = async function() {
+  await originalRefreshAll();
+  renderPlanner();
+};
+
 </script>
 </body>
 </html>
